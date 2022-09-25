@@ -1,6 +1,6 @@
 mod header;
 mod field;
-mod record;
+pub mod record;
 
 use crate::{BLOCK_SIZE, PswSafeError};
 use crate::pswdb::field::RecordField;
@@ -135,7 +135,7 @@ mod tests {
     #[test]
     fn execute_load() {
         let mut data_buf = Vec::new();
-        File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
+        let _ = File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
 
         let mut safe = PswSafe::new();
         assert!(safe.check_format(&data_buf).is_ok());

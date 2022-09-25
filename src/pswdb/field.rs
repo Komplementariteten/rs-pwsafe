@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use uuid::{Uuid};
 use crate::pswdb::field::RecordField::{*};
 use crate::util;
@@ -41,6 +42,12 @@ pub enum RecordField {
     QRCode(String),
     Unknown,
     EndOfRecord,
+}
+
+impl Display for RecordField {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
 }
 
 impl From<u8> for RecordField {

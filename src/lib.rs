@@ -6,7 +6,9 @@ mod util;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::slice::Iter;
 use crate::pswdb::PswDb;
+use crate::pswdb::record::DbRecord;
 use crate::pswerrors::PswSafeError;
 use crate::pswfile::PswSafe;
 use crate::PswSafeError::{FailedToOpenFile, FileNotFound, FileReadError};
@@ -21,8 +23,19 @@ pub struct PswFile {
     pub is_valid: bool
 }
 
-
 impl PswFile {
+    pub fn iter(&self) -> Iter<DbRecord> {
+        self.db.records.iter()
+    }
+    pub fn groups(&self) -> Vec<String> {
+        let mut groups = Vec::new();
+        for record in &self.db.records {
+            if let Some(g) = record.group() {
+                groups.push(g);
+            }
+        }
+        groups
+    }
     pub fn open(file_name: &str, phrase: &str) -> Result<PswFile, PswSafeError> {
 
         let path = Path::new(file_name);

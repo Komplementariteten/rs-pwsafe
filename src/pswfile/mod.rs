@@ -273,18 +273,19 @@ mod tests {
     #[test]
     fn unlock_prints_text() {
         let mut data_buf = Vec::new();
-        File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
+        let _ = File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
 
         let mut safe = PswSafe::new();
         assert!(safe.check_format(&data_buf).is_ok());
         assert!(safe.load(&data_buf).is_ok());
-        safe.unlock("PswSafe123".to_string());
+        let unlock = safe.unlock("PswSafe123".to_string());
+        assert!(unlock.is_ok())
     }
 
     #[test]
     fn strecht_key_match() {
         let mut data_buf = Vec::new();
-        File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
+        let _ = File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
 
         let mut safe = PswSafe::new();
         safe.set_salt(&data_buf);
@@ -297,7 +298,7 @@ mod tests {
     #[test]
     fn check_reports_valid_file() {
         let mut data_buf = Vec::new();
-        File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
+        let _ = File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
 
         let mut safe = PswSafe::new();
         assert!(safe.check_format(&data_buf).is_ok())
@@ -313,7 +314,7 @@ mod tests {
     #[test]
     fn check_tag_finds_tag_in_file() {
         let mut data_buf = Vec::new();
-        File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
+        let _ = File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
 
         let safe = PswSafe::new();
         let tag_s = safe.check_tag(data_buf.as_slice());
