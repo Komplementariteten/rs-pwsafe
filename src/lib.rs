@@ -1,43 +1,78 @@
-mod pswfile;
-pub mod pswerrors;
-pub mod pswdb;
+//! #rs-pwsafe
+//!
+//! A libary to read pw-safe files and decrypt them
+//! currently only version 3 is supported
+mod pwsfile;
+pub mod pwserrors;
+pub mod pwsdb;
 mod util;
 
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::slice::Iter;
-use crate::pswdb::PswDb;
-use crate::pswdb::record::DbRecord;
-use crate::pswerrors::PswSafeError;
-use crate::pswfile::PswSafe;
-use crate::PswSafeError::{FailedToOpenFile, FileNotFound, FileReadError};
+use crate::pwsdb::PwsDb;
+use crate::pwsdb::record::DbRecord;
+use crate::pwserrors::PwsSafeError;
+use crate::pwsfile::PwsSafe;
+use crate::PwsSafeError::{FailedToOpenFile, FileNotFound, FileReadError};
+/// Size of a twofish block
 const BLOCK_SIZE: usize = 16;
 
 
+/// High level abstraction of the PwSafe Database
+///
+/// #Example
+/// ```
+/// use rs_pwsafe::PwsFile;
+/// let mut file = match PwsFile::open("DevTest.psafe3") {
+///     Ok(f) => f,
+///     Err(e) => panic!("failed to open safe: {:?}", e) ///
+/// };
+///
+/// match file.unlock("PswSafe123") {
+///     Ok(_) => (),
+///     Err(e) => panic!("failed to unlock db with {:?}", e)
+/// }
+/// ```
 #[derive(Debug)]
-pub struct PswFile {
+pub struct PwsFile {
     pub path: PathBuf,
-    pub db: PswDb,
+    pub db: PwsDb,
+    s: PwsSafe,
     pub is_open: bool,
     pub is_valid: bool
 }
 
-impl PswFile {
+impl PwsFile {
+    /// Return iterator over all records
     pub fn iter(&self) -> Iter<DbRecord> {
         self.db.records.iter()
     }
-    pub fn groups(&self) -> Vec<String> {
-        let mut groups = Vec::new();
+    /// Returns a list of all Groups in the database
+    pub fn groups(&self) -> HashSet<String> {
+        let mut groups = HashSet::new();
         for record in &self.db.records {
             if let Some(g) = record.group() {
-                groups.push(g);
+                groups.insert(g);
             }
         }
         groups
     }
-    pub fn open(file_name: &str, phrase: &str) -> Result<PswFile, PswSafeError> {
+    /// Returns all items in a group
+    pub fn by_broup(&self, group: String) -> Vec<&DbRecord> {
+        self.iter().filter(| &r | r.group().is_some())
+            .filter(| &r | r.group().unwrap() == group).collect::<Vec<&DbRecord>>()
+    }
+    /// Decrypt file data and load header and field
+    pub fn unlock(&mut self, phrase: &str) -> Result<(), PwsSafeError> {
+        let data = self.s.unlock(phrase.to_string())?;
+        self.db.load(data)
+    }
 
+    /// Read file and parse binary data in an acording struct
+    pub fn open(file_name: &str) -> Result<PwsFile, PwsSafeError> {
         let path = Path::new(file_name);
         if !path.exists() {
             return Err(FileNotFound)
@@ -52,15 +87,14 @@ impl PswFile {
             Err(_) => return Err(FileReadError)
         };
 
-        let mut safe = PswSafe::new();
+        let mut safe = PwsSafe::new();
         safe.check_format(&buff)?;
         safe.load(&buff)?;
-        let data = safe.unlock(phrase.to_string())?;
-        let db = PswDb::load(data)?;
-        Ok(PswFile {
-                is_open: false,
+        Ok(PwsFile {
+                is_open: true,
                 is_valid: true,
-                db,
+                s: safe,
+                db: PwsDb::new(),
                 path: path.to_path_buf()
             })
     }

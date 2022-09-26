@@ -1,6 +1,6 @@
 [package]
 name = "rs-pwsafe"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 license = "MIT"
 description = "A readonly implementation of the pwsafe file format"

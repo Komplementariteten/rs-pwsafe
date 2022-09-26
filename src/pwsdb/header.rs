@@ -1,12 +1,14 @@
 use std::str::from_utf8;
+
 use uuid::Uuid;
-use crate::pswdb::header::HeaderField::{NamedPasswordPolicy, RecentlyUsedEntries};
+
+use crate::pwsdb::header::HeaderField::{NamedPasswordPolicy, RecentlyUsedEntries};
 use crate::util::{bytes_as_u16, to_uinx_timestamp, to_utf8_string, to_uuid};
 
 #[derive(Debug, PartialEq)]
 pub struct Header {
     pub(crate) field: HeaderField,
-    pub(crate) len: usize
+    pub(crate) len: usize,
 }
 
 #[derive(Debug, PartialOrd, PartialEq)]
@@ -32,7 +34,7 @@ pub enum HeaderField {
     EmptyGroups(String),
     Yubico(String),
     LastMastPswChangeTimestamp(u32),
-    EndOfEntry
+    EndOfEntry,
 }
 
 impl From<u8> for HeaderField {
@@ -70,7 +72,7 @@ impl HeaderField {
             HeaderField::Version(..) => {
                 let vers = bytes_as_u16(&bytes);
                 HeaderField::Version(vers)
-            },
+            }
             HeaderField::TimestampLastSaved(..) =>
                 HeaderField::TimestampLastSaved(to_uinx_timestamp(bytes)),
             HeaderField::UUID(..) =>
@@ -81,31 +83,31 @@ impl HeaderField {
                     Err(e) => panic!("{:?}", e)
                 };
                 HeaderField::NonDefaultPreferences(text.to_string())
-            },
+            }
             HeaderField::TreeDisplayStatus(..) => {
                 let text = match from_utf8(bytes) {
                     Ok(s) => s,
                     Err(e) => panic!("{:?}", e)
                 };
                 HeaderField::TreeDisplayStatus(text.to_string())
-            },
+            }
             HeaderField::WhoLastSaved(..) => {
                 let text = match from_utf8(bytes) {
                     Ok(s) => s,
                     Err(e) => panic!("{:?}", e)
                 };
                 HeaderField::WhoLastSaved(text.to_string())
-            },
+            }
             HeaderField::WhatLastSaved(..) => {
                 let text = match from_utf8(bytes) {
                     Ok(s) => s,
                     Err(e) => panic!("{:?}", e)
                 };
                 HeaderField::WhatLastSaved(text.to_string())
-            },
+            }
             HeaderField::DatabaseName(..) => HeaderField::DatabaseName(to_utf8_string(bytes)),
             HeaderField::DatabaseDescription(..) => HeaderField::DatabaseDescription(to_utf8_string(bytes)),
-            HeaderField::LastSavedByUser(..) =>  HeaderField::LastSavedByUser(to_utf8_string(bytes)),
+            HeaderField::LastSavedByUser(..) => HeaderField::LastSavedByUser(to_utf8_string(bytes)),
             HeaderField::LastSavedOnHost(..) => HeaderField::LastSavedOnHost(to_utf8_string(bytes)),
             HeaderField::NamedPasswordPolicy(..) => NamedPasswordPolicy(to_utf8_string(bytes)),
             HeaderField::RecentlyUsedEntries(..) => RecentlyUsedEntries(to_utf8_string(bytes)),
