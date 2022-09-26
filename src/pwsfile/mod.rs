@@ -1,7 +1,7 @@
 use lsx::Twofish;
 use sha2::{Digest, Sha256};
-use crate::{BLOCK_SIZE, FileNotFound, PswSafeError};
-use crate::PswSafeError::{EofPositionError, FileNotSupported, FileToSmall, IterationsNotInitialized};
+use crate::{BLOCK_SIZE, FileNotFound, PwsSafeError};
+use crate::PwsSafeError::{EofPositionError, FileNotSupported, FileToSmall, IterationsNotInitialized};
 
 // EOF: The ASCII characters "PWS3-EOFPWS3-EOF" (note that this is
 // exactly one block long), unencrypted. This is an implementation convenience
@@ -18,7 +18,7 @@ const IV_SIZE: usize = 16;
 const HMAC_SIZE: usize = 32;
 
 #[derive(Debug)]
-pub struct PswSafe {
+pub struct PwsSafe {
     salt: [u8; SALT_SIZE],
     // ITER is the number of iterations on the hash function to calculate stretch_key
     iter: u32,
@@ -58,9 +58,9 @@ pub struct PswSafe {
     hmac: [u8; HMAC_SIZE]
 }
 
-impl PswSafe {
-    pub fn new() -> PswSafe {
-        PswSafe {
+impl PwsSafe {
+    pub fn new() -> PwsSafe {
+        PwsSafe {
             salt: [0; SALT_SIZE],
             iter: 0,
             stretch_key: [0; KEY_SIZE],
@@ -78,14 +78,14 @@ impl PswSafe {
     // TAG is the sequence of 4 ASCII characters "PWS3". This is to serve as a
     // quick way for the application to identify the database as a PasswordSafe
     // version 3 file. This tag has no cryptographic value.
-    fn check_tag(&self, bytes: &[u8]) -> Result<(), PswSafeError> {
+    fn check_tag(&self, bytes: &[u8]) -> Result<(), PwsSafeError> {
         if bytes[..PSW3_IDENTIFIER.len()].eq(PSW3_IDENTIFIER) {
             return Ok(());
         }
         Err(FileNotSupported)
     }
 
-    pub(crate) fn check_format(&mut self, bytes: &[u8]) -> Result<usize, PswSafeError> {
+    pub(crate) fn check_format(&mut self, bytes: &[u8]) -> Result<usize, PwsSafeError> {
         self.check_tag(bytes)?;
         let position_eof = match bytes.windows(EOF.len()).position(| w | w == EOF) {
             Some(p) => p,
@@ -103,7 +103,7 @@ impl PswSafe {
         Ok(position_eof)
     }
 
-    pub fn load(&mut self, bytes: &[u8]) -> Result<(), PswSafeError> {
+    pub fn load(&mut self, bytes: &[u8]) -> Result<(), PwsSafeError> {
         self.check_format(&bytes)?;
         self.set_salt(&bytes);
         self.set_iter(&bytes);
@@ -131,7 +131,7 @@ impl PswSafe {
         self.iv.copy_from_slice(&byte[start..end]);
     }
 
-    pub(crate) fn unlock(&self, pw: String) -> Result<Vec<u8>, PswSafeError> {
+    pub(crate) fn unlock(&self, pw: String) -> Result<Vec<u8>, PwsSafeError> {
         let k = self.load_k(pw.into_bytes())?;
         let mut result = Vec::new();
         let data_slice = self.enc_db.as_slice();
@@ -191,7 +191,7 @@ impl PswSafe {
     }
 
     #[allow(dead_code)]
-    fn load_l(&self, pw: Vec<u8>) -> Result<[u8; 32], PswSafeError> {
+    fn load_l(&self, pw: Vec<u8>) -> Result<[u8; 32], PwsSafeError> {
         let key = self.get_stretch_key(pw)?;
         let twofish = Twofish::new256(&key);
         let mut b3: [u8; 16] = [0; 16];
@@ -204,7 +204,7 @@ impl PswSafe {
         Ok(result)
     }
 
-    fn load_k(&self, pw: Vec<u8>) -> Result<[u8; 32], PswSafeError> {
+    fn load_k(&self, pw: Vec<u8>) -> Result<[u8; 32], PwsSafeError> {
         let key = self.get_stretch_key(pw)?;
         let twofish = Twofish::new256(&key);
         let mut b1: [u8; BLOCK_SIZE] = [0; BLOCK_SIZE];
@@ -218,7 +218,7 @@ impl PswSafe {
     }
 
     #[allow(dead_code)]
-    pub fn check_key(&self, pw: Vec<u8>) -> Result<bool, PswSafeError> {
+    pub fn check_key(&self, pw: Vec<u8>) -> Result<bool, PwsSafeError> {
         let _ = self.get_stretch_key(pw)?;
         let mut hasher = Sha256::new();
         sha2::Digest::update(&mut hasher, &self.stretch_key);
@@ -226,7 +226,7 @@ impl PswSafe {
         Ok(self.stretch_key.eq(hash.as_slice()))
     }
 
-    fn get_stretch_key(&self, mut pw: Vec<u8>) -> Result<[u8; 32], PswSafeError> {
+    fn get_stretch_key(&self, mut pw: Vec<u8>) -> Result<[u8; 32], PwsSafeError> {
         if self.iter == 0 {
             return Err(IterationsNotInitialized)
         }
@@ -273,20 +273,21 @@ mod tests {
     #[test]
     fn unlock_prints_text() {
         let mut data_buf = Vec::new();
-        File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
+        let _ = File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
 
-        let mut safe = PswSafe::new();
+        let mut safe = PwsSafe::new();
         assert!(safe.check_format(&data_buf).is_ok());
         assert!(safe.load(&data_buf).is_ok());
-        safe.unlock("PswSafe123".to_string());
+        let unlock = safe.unlock("PswSafe123".to_string());
+        assert!(unlock.is_ok())
     }
 
     #[test]
     fn strecht_key_match() {
         let mut data_buf = Vec::new();
-        File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
+        let _ = File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
 
-        let mut safe = PswSafe::new();
+        let mut safe = PwsSafe::new();
         safe.set_salt(&data_buf);
         safe.set_iter(&data_buf);
         let pw_vec = "PswSafe123".as_bytes().to_vec();
@@ -297,15 +298,15 @@ mod tests {
     #[test]
     fn check_reports_valid_file() {
         let mut data_buf = Vec::new();
-        File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
+        let _ = File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
 
-        let mut safe = PswSafe::new();
+        let mut safe = PwsSafe::new();
         assert!(safe.check_format(&data_buf).is_ok())
     }
 
     #[test]
     fn check_tag_finds_tag() {
-        let safe = PswSafe::new();
+        let safe = PwsSafe::new();
         let tag_s = safe.check_tag(PSW3_IDENTIFIER);
         assert!(tag_s.is_ok())
     }
@@ -313,9 +314,9 @@ mod tests {
     #[test]
     fn check_tag_finds_tag_in_file() {
         let mut data_buf = Vec::new();
-        File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
+        let _ = File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
 
-        let safe = PswSafe::new();
+        let safe = PwsSafe::new();
         let tag_s = safe.check_tag(data_buf.as_slice());
         if tag_s.is_err() {
             println!("{:?} is not {:?}", data_buf.as_slice()[..PSW3_IDENTIFIER.len()].to_vec(), PSW3_IDENTIFIER.to_vec());

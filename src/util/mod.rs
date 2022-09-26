@@ -1,6 +1,14 @@
 use uuid::Uuid;
 use std::str::from_utf8;
-
+#[macro_export]
+macro_rules! is_of_var {
+    ($val:ident, $var:path) => {
+        match $val {
+            $var{..} => true,
+            _ => false
+        }
+    }
+}
 pub fn bytes_as_u32(bytes: &[u8]) -> u32 {
     ((bytes[0] as u32) <<  0) +
         ((bytes[1] as u32) <<  8) +

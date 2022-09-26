@@ -1,5 +1,8 @@
-use uuid::{Uuid};
-use crate::pswdb::field::RecordField::{*};
+use std::fmt::{Display, Formatter};
+
+use uuid::Uuid;
+
+use crate::pwsdb::field::RecordField::{*};
 use crate::util;
 use crate::util::{to_uinx_timestamp, to_utf8_string};
 
@@ -41,6 +44,12 @@ pub enum RecordField {
     QRCode(String),
     Unknown,
     EndOfRecord,
+}
+
+impl Display for RecordField {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
 }
 
 impl From<u8> for RecordField {
@@ -111,10 +120,10 @@ impl RecordField {
             EMailAddress(..) => EMailAddress(to_utf8_string(bytes)),
             Username(..) => Username(to_utf8_string(bytes)),
             URL(..) => URL(to_utf8_string(bytes)),
-            Reserved1(..) => Reserved1([bytes[0], bytes[1], bytes[2],bytes[3]]),
+            Reserved1(..) => Reserved1([bytes[0], bytes[1], bytes[2], bytes[3]]),
             RunCommand(..) => RunCommand(to_utf8_string(bytes)),
             ProtectedEntry(..) => ProtectedEntry(bytes[0]),
-            PasswordExpiryInterval(..) => PasswordExpiryInterval([bytes[0], bytes[1], bytes[2],bytes[3]]),
+            PasswordExpiryInterval(..) => PasswordExpiryInterval([bytes[0], bytes[1], bytes[2], bytes[3]]),
             _ => panic!("not implemented jet")
         }
     }

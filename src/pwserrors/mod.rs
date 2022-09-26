@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub enum PswSafeError {
+pub enum PwsSafeError {
     FileNotFound,
     FailedToOpenFile,
     FileReadError,
