@@ -1,9 +1,9 @@
 [package]
 name = "rs-pwsafe"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2021"
 description = "A readonly implementation of the pwsafe file format"
-readme = "README.MD"
+readme = "README.md"
 keywords = ["pwsafe", "password-safe"]
 repository = "https://github.com/Komplementariteten/rs-pwsafe"
 license-file = "LICENSE"
