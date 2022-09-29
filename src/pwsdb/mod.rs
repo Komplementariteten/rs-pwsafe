@@ -1,4 +1,4 @@
-//! #rs-pwsafe::pwsdb
+//! # rs-pwsafe::pwsdb
 //!
 //! parses decrypted data and handles most header and field types
 use crate::{BLOCK_SIZE, PwsSafeError};

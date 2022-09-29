@@ -1,4 +1,4 @@
-//! #rs-pwsafe
+//!# rs-pwsafe
 //!
 //! A libary to read pw-safe files and decrypt them
 //! currently only version 3 is supported
@@ -23,7 +23,7 @@ const BLOCK_SIZE: usize = 16;
 
 /// High level abstraction of the PwSafe Database
 ///
-/// #Example
+///# Example
 /// ```
 /// use rs_pwsafe::PwsFile;
 /// let mut file = match PwsFile::open("DevTest.psafe3") {
