@@ -35,6 +35,9 @@ const BLOCK_SIZE: usize = 16;
 ///     Ok(_) => (),
 ///     Err(e) => panic!("failed to unlock db with {:?}", e)
 /// }
+/// for record in file.iter() {
+///     println!("{:?}", record)
+/// }
 /// ```
 #[derive(Debug)]
 pub struct PwsFile {

@@ -3,7 +3,7 @@
 ![Apache2/MIT licensed][license-image]
 
 Pure rust readonly implementation of the Pwsafe [file format](https://github.com/pwsafe/pwsafe/blob/master/docs/formatV3.txt).
-For more information on Pwsafe and a solid c++ implementation, see [pwsafe.org](https://pwsafe.org) and on [github](https://github.com/pwsafe/pwsafe)
+For more information on Pwsafe and a solid c++ implementation, see [pwsafe.org](https://pwsafe.org) and on [GitHub](https://github.com/pwsafe/pwsafe)
 
 If you need write support take a look at [pwsafe](https://docs.rs/pwsafe/latest/pwsafe/) a other pwsafe implementation in rust, which i have not looked into.
 
@@ -11,7 +11,6 @@ If you need write support take a look at [pwsafe](https://docs.rs/pwsafe/latest/
 This is currently a real early state, not all field types or other specifications are implemented yet.
 
 ## License
-
 All crates licensed under
 
 * [MIT license](http://opensource.org/licenses/MIT)
