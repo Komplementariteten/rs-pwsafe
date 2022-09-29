@@ -24,6 +24,6 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[deps-image]: 
-[deps-link]: 
+[deps-image]: https://deps.rs/crate/rs-pwsafe/0.0.2/status.svg
+[deps-link]: https://deps.rs/crate/rs-pwsafe/0.0.2
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
