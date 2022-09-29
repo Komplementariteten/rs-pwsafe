@@ -15,7 +15,7 @@ mod tests {
         let groups = file.groups();
         assert_eq!(groups.len(), 2);
         let records = file.by_broup(groups.iter().next().unwrap().to_string());
-        assert_eq!(records.len(), 3);
+        assert_eq!(records.len(), 4);
     }
 
     #[test]
