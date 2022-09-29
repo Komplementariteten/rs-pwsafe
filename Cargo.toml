@@ -2,7 +2,6 @@
 name = "rs-pwsafe"
 version = "0.0.3"
 edition = "2021"
-license = "MIT"
 description = "A readonly implementation of the pwsafe file format"
 readme = "README.MD"
 keywords = ["pwsafe", "password-safe"]
