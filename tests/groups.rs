@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
-    use rs_pwsafe::PwsFile;
+    use rs_pwsafe::PwFile;
 
     #[test]
     fn entries_are_grouped() {
-        let mut file = match PwsFile::open("tests/groups.psafe3") {
+        let mut file = match PwFile::open("tests/groups.psafe3") {
             Ok(f) => f,
             Err(e) => panic!("failed to open safe: {:?}", e)
         };
@@ -20,7 +20,7 @@ mod tests {
 
     #[test]
     fn get_entry_has_title() {
-        let mut file = match PwsFile::open("tests/groups.psafe3") {
+        let mut file = match PwFile::open("tests/groups.psafe3") {
             Ok(f) => f,
             Err(e) => panic!("failed to open safe: {:?}", e)
         };
@@ -37,7 +37,7 @@ mod tests {
 
     #[test]
     fn get_entry_has_password() {
-        let mut file = match PwsFile::open("tests/groups.psafe3") {
+        let mut file = match PwFile::open("tests/groups.psafe3") {
             Ok(f) => f,
             Err(e) => panic!("failed to open safe: {:?}", e)
         };
