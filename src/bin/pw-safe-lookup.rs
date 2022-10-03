@@ -32,11 +32,9 @@ fn main() {
         }
     };
 
-    /* println!("Please enter the pw-safe password:");
+    println!("Please enter the pw-safe password:");
     let mut pw_str = String::new();
-    let _ = io::stdin().read_line(&mut pw_str); */
-    let pw_str = "PswSafe123".to_string();
-
+    let _ = io::stdin().read_line(&mut pw_str);
 
     match file.unlock(&pw_str.trim()) {
         Ok(_) => (),

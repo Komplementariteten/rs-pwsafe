@@ -2,6 +2,8 @@
 //!
 //! A libary to read pw-safe files and decrypt them
 //! currently only version 3 is supported
+extern crate core;
+
 mod pwsfile;
 pub mod pwserrors;
 pub mod pwsdb;
