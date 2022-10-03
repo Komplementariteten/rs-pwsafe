@@ -1,6 +1,6 @@
-use rs_pwsafe::PwsFile;
+use rs_pwsafe::PwFile;
 fn main() {
-    let mut file = match PwsFile::open("DevTest.psafe3") {
+    let mut file = match PwFile::open("DevTest.psafe3") {
         Ok(f) => f,
         Err(e) => panic!("failed to open safe: {:?}", e)
     };

@@ -1,5 +1,5 @@
 use std::{env, io};
-use rs_pwsafe::PwsFile;
+use rs_pwsafe::PwFile;
 
 const DB_ARGUMENT: &str = "--db";
 const TITLE_ARGUMENT: &str = "--title";
@@ -24,7 +24,7 @@ fn main() {
     }
 
     let db_file_str = db_file.unwrap();
-    let mut file = match PwsFile::open(db_file_str) {
+    let mut file = match PwFile::open(db_file_str) {
         Ok(f) => f,
         Err(e) => {
             println!("opening pwsafe file {} failed with {:?}", db_file_str, e);
@@ -32,9 +32,10 @@ fn main() {
         }
     };
 
-    println!("Please enter the pw-safe password:");
+    /* println!("Please enter the pw-safe password:");
     let mut pw_str = String::new();
-    let _ = io::stdin().read_line(&mut pw_str);
+    let _ = io::stdin().read_line(&mut pw_str); */
+    let pw_str = "PswSafe123".to_string();
 
 
     match file.unlock(&pw_str.trim()) {

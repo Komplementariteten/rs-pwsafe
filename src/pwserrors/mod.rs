@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub enum PwsSafeError {
+pub enum PwSafeError {
     FileNotFound,
     FailedToOpenFile,
     FileReadError,
@@ -9,5 +9,9 @@ pub enum PwsSafeError {
     IterationsNotInitialized,
     FileToSmall,
     EofPositionError,
-    InvalidKey
+    InvalidKey,
+    CantCreateHmacWithL,
+    HmacSigSizeDoesNotMatch,
+    InvalidSignature,
+    SignatureAlgorithmNotInitialized
 }

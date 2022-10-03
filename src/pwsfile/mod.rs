@@ -1,7 +1,8 @@
 use lsx::Twofish;
 use sha2::{Digest, Sha256};
-use crate::{BLOCK_SIZE, FileNotFound, PwsSafeError};
-use crate::PwsSafeError::{EofPositionError, FileNotSupported, FileToSmall, IterationsNotInitialized};
+use hmac::{Hmac, Mac};
+use crate::{BLOCK_SIZE, FileNotFound, PwSafeError};
+use crate::PwSafeError::{CantCreateHmacWithL, EofPositionError, FileNotSupported, FileToSmall, IterationsNotInitialized};
 
 // EOF: The ASCII characters "PWS3-EOFPWS3-EOF" (note that this is
 // exactly one block long), unencrypted. This is an implementation convenience
@@ -15,10 +16,19 @@ const SALT_SIZE: usize = 32;
 const KEY_SIZE: usize = 32;
 const ITER_SIZE: usize = 4;
 const IV_SIZE: usize = 16;
-const HMAC_SIZE: usize = 32;
+pub(crate) const HMAC_SIZE: usize = 32;
+type UsedHmacAlg = Hmac<Sha256>;
+
 
 #[derive(Debug)]
-pub struct PwsSafe {
+pub struct PwSafeTransition {
+    pub plt: Vec<u8>,
+    pub hmac: UsedHmacAlg,
+    pub sig: [u8; HMAC_SIZE]
+}
+
+#[derive(Debug)]
+pub struct PwSafeEncrypted {
     salt: [u8; SALT_SIZE],
     // ITER is the number of iterations on the hash function to calculate stretch_key
     iter: u32,
@@ -54,13 +64,12 @@ pub struct PwsSafe {
     // (starting from the version number in the header, ending with the last field
     // of the last record). The key L, as stored in B3 and B4, is used as the hash
     // key value.
-    #[allow(dead_code)]
-    hmac: [u8; HMAC_SIZE]
+    hmac: [u8; HMAC_SIZE],
 }
 
-impl PwsSafe {
-    pub fn new() -> PwsSafe {
-        PwsSafe {
+impl PwSafeEncrypted {
+    pub fn new() -> PwSafeEncrypted {
+        PwSafeEncrypted {
             salt: [0; SALT_SIZE],
             iter: 0,
             stretch_key: [0; KEY_SIZE],
@@ -71,21 +80,21 @@ impl PwsSafe {
             iv: [0; BLOCK_SIZE],
             db_end: 0,
             enc_db: vec![],
-            hmac: [0; 32]
+            hmac: [0; HMAC_SIZE]
         }
     }
 
     // TAG is the sequence of 4 ASCII characters "PWS3". This is to serve as a
     // quick way for the application to identify the database as a PasswordSafe
     // version 3 file. This tag has no cryptographic value.
-    fn check_tag(&self, bytes: &[u8]) -> Result<(), PwsSafeError> {
+    fn check_tag(&self, bytes: &[u8]) -> Result<(), PwSafeError> {
         if bytes[..PSW3_IDENTIFIER.len()].eq(PSW3_IDENTIFIER) {
             return Ok(());
         }
         Err(FileNotSupported)
     }
 
-    pub(crate) fn check_format(&mut self, bytes: &[u8]) -> Result<usize, PwsSafeError> {
+    pub(crate) fn check_format(&mut self, bytes: &[u8]) -> Result<usize, PwSafeError> {
         self.check_tag(bytes)?;
         let position_eof = match bytes.windows(EOF.len()).position(| w | w == EOF) {
             Some(p) => p,
@@ -103,7 +112,7 @@ impl PwsSafe {
         Ok(position_eof)
     }
 
-    pub fn load(&mut self, bytes: &[u8]) -> Result<(), PwsSafeError> {
+    pub fn load(&mut self, bytes: &[u8]) -> Result<(), PwSafeError> {
         self.check_format(&bytes)?;
         self.set_salt(&bytes);
         self.set_iter(&bytes);
@@ -112,7 +121,14 @@ impl PwsSafe {
         self.set_b34(&bytes);
         self.set_db(&bytes);
         self.set_iv(&bytes);
+        self.set_hmac(&bytes);
         Ok(())
+    }
+
+    fn set_hmac(&mut self, bytes: &[u8]) {
+        let start = self.db_end + EOF.len();
+        let end = start + HMAC_SIZE;
+        self.hmac.copy_from_slice(&bytes[start..end]);
     }
 
     fn set_db(&mut self, bytes: &[u8]) {
@@ -131,8 +147,10 @@ impl PwsSafe {
         self.iv.copy_from_slice(&byte[start..end]);
     }
 
-    pub(crate) fn unlock(&self, pw: String) -> Result<Vec<u8>, PwsSafeError> {
-        let k = self.load_k(pw.into_bytes())?;
+    pub(crate) fn unlock(&self, pw: String) -> Result<Vec<u8>, PwSafeError> {
+        let phrase = pw.trim();
+        self.check_key(phrase.as_bytes().to_vec())?;
+        let k = self.load_k(phrase.as_bytes().to_vec())?;
         let mut result = Vec::new();
         let data_slice = self.enc_db.as_slice();
         let mut crypt_block: [u8; BLOCK_SIZE] = [0; BLOCK_SIZE];
@@ -149,15 +167,30 @@ impl PwsSafe {
             Self::_xor_block(&mut plain_block, &inblock);
             inblock.copy_from_slice(&crypt_block);
             result.extend(plain_block);
-            // println!("{:4x?}", plain_block);
-            // println!("{}", Self::_to_ascii(&plain_block));
             start += BLOCK_SIZE;
             end += BLOCK_SIZE;
         }
 
-        // println!("{}", Self::_to_ascii(&result));
-        // println!("{:#x?}",&result);
         Ok(result)
+    }
+
+    pub fn prepare_db(&self, pw:String) -> Result<PwSafeTransition, PwSafeError> {
+        let hmac = self.get_hmac_handle(&pw)?;
+        let data = self.unlock(pw)?;
+        Ok(PwSafeTransition {
+            plt: data,
+            hmac,
+            sig: self.hmac
+        })
+    }
+
+    pub(crate) fn get_hmac_handle(&self, pw:&str) -> Result<UsedHmacAlg, PwSafeError> {
+        let l = self.load_l(pw.as_bytes().to_vec())?;
+        let mac = match UsedHmacAlg::new_from_slice(&l) {
+            Ok(m) => m,
+            Err(_) => return Err(CantCreateHmacWithL)
+        };
+        Ok(mac)
     }
 
     fn set_iter(&mut self, bytes: &[u8]) {
@@ -190,21 +223,20 @@ impl PwsSafe {
         self.stretch_key.copy_from_slice(&bytes[start..end_key]);
     }
 
-    #[allow(dead_code)]
-    fn load_l(&self, pw: Vec<u8>) -> Result<[u8; 32], PwsSafeError> {
+    fn load_l(&self, pw: Vec<u8>) -> Result<[u8; 32], PwSafeError> {
         let key = self.get_stretch_key(pw)?;
         let twofish = Twofish::new256(&key);
-        let mut b3: [u8; 16] = [0; 16];
-        let mut b4: [u8; 16] = [0; 16];
+        let mut b3: [u8; BLOCK_SIZE] = [0; BLOCK_SIZE];
+        let mut b4: [u8; BLOCK_SIZE] = [0; BLOCK_SIZE];
         twofish.decrypt(&self.b3, &mut b3);
         twofish.decrypt(&self.b4, &mut b4);
-        let mut result: [u8; 32] = [0; 32];
-        result.copy_from_slice(&b3);
-        result[..16].copy_from_slice(&b4);
+        let mut result: [u8; (2 * BLOCK_SIZE)] = [0; (2 * BLOCK_SIZE)];
+        result[..BLOCK_SIZE].copy_from_slice(&b3);
+        result[BLOCK_SIZE..(2*BLOCK_SIZE)].copy_from_slice(&b4);
         Ok(result)
     }
 
-    fn load_k(&self, pw: Vec<u8>) -> Result<[u8; 32], PwsSafeError> {
+    fn load_k(&self, pw: Vec<u8>) -> Result<[u8; 32], PwSafeError> {
         let key = self.get_stretch_key(pw)?;
         let twofish = Twofish::new256(&key);
         let mut b1: [u8; BLOCK_SIZE] = [0; BLOCK_SIZE];
@@ -217,8 +249,7 @@ impl PwsSafe {
         Ok(result)
     }
 
-    #[allow(dead_code)]
-    pub fn check_key(&self, pw: Vec<u8>) -> Result<bool, PwsSafeError> {
+    pub fn check_key(&self, pw: Vec<u8>) -> Result<bool, PwSafeError> {
         let _ = self.get_stretch_key(pw)?;
         let mut hasher = Sha256::new();
         sha2::Digest::update(&mut hasher, &self.stretch_key);
@@ -226,7 +257,7 @@ impl PwsSafe {
         Ok(self.stretch_key.eq(hash.as_slice()))
     }
 
-    fn get_stretch_key(&self, mut pw: Vec<u8>) -> Result<[u8; 32], PwsSafeError> {
+    fn get_stretch_key(&self, mut pw: Vec<u8>) -> Result<[u8; 32], PwSafeError> {
         if self.iter == 0 {
             return Err(IterationsNotInitialized)
         }
@@ -275,7 +306,7 @@ mod tests {
         let mut data_buf = Vec::new();
         let _ = File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
 
-        let mut safe = PwsSafe::new();
+        let mut safe = PwSafeEncrypted::new();
         assert!(safe.check_format(&data_buf).is_ok());
         assert!(safe.load(&data_buf).is_ok());
         let unlock = safe.unlock("PswSafe123".to_string());
@@ -287,7 +318,7 @@ mod tests {
         let mut data_buf = Vec::new();
         let _ = File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
 
-        let mut safe = PwsSafe::new();
+        let mut safe = PwSafeEncrypted::new();
         safe.set_salt(&data_buf);
         safe.set_iter(&data_buf);
         let pw_vec = "PswSafe123".as_bytes().to_vec();
@@ -300,13 +331,13 @@ mod tests {
         let mut data_buf = Vec::new();
         let _ = File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
 
-        let mut safe = PwsSafe::new();
+        let mut safe = PwSafeEncrypted::new();
         assert!(safe.check_format(&data_buf).is_ok())
     }
 
     #[test]
     fn check_tag_finds_tag() {
-        let safe = PwsSafe::new();
+        let safe = PwSafeEncrypted::new();
         let tag_s = safe.check_tag(PSW3_IDENTIFIER);
         assert!(tag_s.is_ok())
     }
@@ -316,7 +347,7 @@ mod tests {
         let mut data_buf = Vec::new();
         let _ = File::open("DevTest.psafe3").expect("Failed to open Test File").read_to_end(&mut data_buf);
 
-        let safe = PwsSafe::new();
+        let safe = PwSafeEncrypted::new();
         let tag_s = safe.check_tag(data_buf.as_slice());
         if tag_s.is_err() {
             println!("{:?} is not {:?}", data_buf.as_slice()[..PSW3_IDENTIFIER.len()].to_vec(), PSW3_IDENTIFIER.to_vec());
