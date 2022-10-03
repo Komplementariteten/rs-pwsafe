@@ -192,12 +192,14 @@ mod tests {
         let mut safe = PwSafeEncrypted::new();
         assert!(safe.check_format(&data_buf).is_ok());
         assert!(safe.load(&data_buf).is_ok());
-        let pt = match safe.unlock("PswSafe123".to_string()) {
+        let pt = match safe.prepare_db("PswSafe123".to_string()) {
             Ok(d) => d,
             Err(e) => panic!("{:?}", e)
         };
-        let mut db = PwDb::new();
-        let _ = db.load(pt);
+        let db: PwDb = match pt.try_into() {
+            Ok(d) => d,
+            Err(e) => panic!("{:?}", e)
+        };
         assert!(db.header.len() > 0);
     }
 }
