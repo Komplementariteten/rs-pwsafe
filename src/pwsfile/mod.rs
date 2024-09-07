@@ -230,7 +230,7 @@ impl PwSafeEncrypted {
         let mut b4: [u8; BLOCK_SIZE] = [0; BLOCK_SIZE];
         twofish.decrypt(&self.b3, &mut b3);
         twofish.decrypt(&self.b4, &mut b4);
-        let mut result: [u8; (2 * BLOCK_SIZE)] = [0; (2 * BLOCK_SIZE)];
+        let mut result: [u8; 2 * BLOCK_SIZE] = [0; (2 * BLOCK_SIZE)];
         result[..BLOCK_SIZE].copy_from_slice(&b3);
         result[BLOCK_SIZE..(2*BLOCK_SIZE)].copy_from_slice(&b4);
         Ok(result)
@@ -243,7 +243,7 @@ impl PwSafeEncrypted {
         let mut b2: [u8; BLOCK_SIZE] = [0; BLOCK_SIZE];
         twofish.decrypt(&self.b1, &mut b1);
         twofish.decrypt(&self.b2, &mut b2);
-        let mut result: [u8; (2 * BLOCK_SIZE)] = [0; (2 * BLOCK_SIZE)];
+        let mut result: [u8; 2 * BLOCK_SIZE] = [0; (2 * BLOCK_SIZE)];
         result[..BLOCK_SIZE].copy_from_slice(&b1);
         result[BLOCK_SIZE..(2*BLOCK_SIZE)].copy_from_slice(&b2);
         Ok(result)
