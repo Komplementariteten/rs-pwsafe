@@ -36,6 +36,24 @@ pub fn to_uuid(bytes: &[u8]) -> Uuid {
     return uuid
 }
 
+pub(crate) fn add_to_vec(vec: &mut Vec<u8>, bytes: &[u8]) {
+    for b in bytes {
+        vec.push(b.clone())
+    }
+}
+
 pub fn to_uinx_timestamp(bytes: &[u8]) -> u32 {
     bytes_as_u32(&bytes)
+}
+
+mod test {
+    use crate::util::add_to_vec;
+
+    #[test]
+    fn test_add_to_ve() {
+        let mut rvec = vec![0u8];
+        let bytes = b"ABC";
+        add_to_vec(&mut rvec, bytes);
+        assert_eq!(rvec.iter().count(), 4);
+    }
 }

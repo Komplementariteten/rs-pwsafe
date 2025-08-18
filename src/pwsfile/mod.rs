@@ -1,8 +1,11 @@
+mod pwswriter;
+
 use lsx::Twofish;
 use sha2::{Digest, Sha256};
 use hmac::{Hmac, Mac};
 use crate::{BLOCK_SIZE, FileNotFound, PwSafeError};
 use crate::PwSafeError::{CantCreateHmacWithL, EofPositionError, FileNotSupported, FileToSmall, IterationsNotInitialized};
+use crate::util::add_to_vec;
 
 // EOF: The ASCII characters "PWS3-EOFPWS3-EOF" (note that this is
 // exactly one block long), unencrypted. This is an implementation convenience
@@ -123,6 +126,33 @@ impl PwSafeEncrypted {
         self.set_iv(&bytes);
         self.set_hmac(&bytes);
         Ok(())
+    }
+    
+    pub fn serialize(&mut self) -> Result<Vec<u8>, PwSafeError> {
+        let mut data = vec![];
+        let mut min_size = SALT_SIZE + PSW3_IDENTIFIER.len() + ITER_SIZE + KEY_SIZE + (BLOCK_SIZE * 4) + IV_SIZE;
+        add_to_vec(&mut data, PSW3_IDENTIFIER);
+        add_to_vec(&mut data, &self.salt);
+        // TODO: fix this
+        // add_to_vec(&mut data, &self.iter);
+        add_to_vec(&mut data, &self.hmac);
+        add_to_vec(&mut data, &self.b1);
+        add_to_vec(&mut data, &self.b2);
+        add_to_vec(&mut data, &self.b3);
+        add_to_vec(&mut data, &self.b4);
+        add_to_vec(&mut data, &self.iv);
+        // TODO: add header
+        // add_to_vec(&mut data, &header);
+        
+        // TODO: Rows
+        // add_to_vec(&mut data, &rows);
+
+        // TODO: EOF
+        // add_to_vec(&mut data, &eof);
+
+        // TODO: Hmac
+        // add_to_vec(&mut data, &hmac);
+        Ok(data)
     }
 
     fn set_hmac(&mut self, bytes: &[u8]) {
