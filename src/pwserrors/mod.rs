@@ -13,5 +13,6 @@ pub enum PwSafeError {
     CantCreateHmacWithL,
     HmacSigSizeDoesNotMatch,
     InvalidSignature,
-    SignatureAlgorithmNotInitialized
+    SignatureAlgorithmNotInitialized,
+    CantInitializeFromExisting
 }

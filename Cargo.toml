@@ -11,7 +11,7 @@ documentation = "https://docs.rs/rs-pwsafe/0.0.3/rs_pwsafe/"
 
 [dependencies]
 lsx = "1.1"
-sha2 = "0.10.6"
+sha2 = "0.11.0"
 hmac = "0.13.0"
 
 [dependencies.uuid]

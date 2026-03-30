@@ -9,6 +9,8 @@ pub mod pwserrors;
 pub mod pwsdb;
 mod util;
 
+pub mod builder;
+
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::Read;
