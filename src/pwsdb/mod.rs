@@ -13,9 +13,9 @@ use crate::PwSafeError::{InvalidSignature, SignatureAlgorithmNotInitialized};
 use crate::pwsfile::HMAC_SIZE;
 use crate::util::bytes_as_u32;
 
-mod header;
+pub(crate) mod header;
 mod field;
-pub mod record;
+pub(crate) mod record;
 type UsedHmacAlg = Hmac<Sha256>;
 
 /// storage for the database entries
