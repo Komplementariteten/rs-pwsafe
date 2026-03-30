@@ -52,7 +52,7 @@ pub struct PwFile {
 
 impl PwFile {
     /// Return iterator over all records
-    pub fn iter(&self) -> Iter<DbRecord> {
+    pub fn iter(&self) -> Iter<'_, DbRecord> {
         self.db.records.iter()
     }
     /// Returns a list of all Groups in the database

@@ -1,6 +1,6 @@
 [package]
 name = "rs-pwsafe"
-version = "0.0.7"
+version = "0.0.8"
 edition = "2021"
 description = "A readonly implementation of the pwsafe file format"
 readme = "README.md"
@@ -11,7 +11,7 @@ documentation = "https://docs.rs/rs-pwsafe/0.0.3/rs_pwsafe/"
 
 [dependencies]
 lsx = "1.1"
-sha2 = "0.10.6"
+sha2 = "0.10.9"
 hmac = "0.12.1"
 
 [dependencies.uuid]
