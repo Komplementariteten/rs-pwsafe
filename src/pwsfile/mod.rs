@@ -1,6 +1,6 @@
 use lsx::Twofish;
 use sha2::{Digest, Sha256};
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, Mac, KeyInit};
 use crate::{BLOCK_SIZE, FileNotFound, PwSafeError};
 use crate::PwSafeError::{CantCreateHmacWithL, EofPositionError, FileNotSupported, FileToSmall, IterationsNotInitialized};
 
